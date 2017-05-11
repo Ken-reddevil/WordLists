@@ -6,6 +6,7 @@ var upload = multer({
   dest: 'image/'
 });
 var fs = require('fs');
+var port = 3500;
 
 var superagent = require('superagent');
 var cheerio = require('cheerio');
@@ -32,20 +33,32 @@ app.post('/upload', upload.single('imgData'), function (req, res, next) {
 
 app.get('/url', function (req, res) {
   var url = req.query.q;
+  var result = {
+    status: "error"
+  };
   var text = "";
-  superagent.get(url)
+  superagent
+    .get(url)
     .end(function (err, sres) {
-      var $ = cheerio.load(sres.text);
-      $('.story-body__inner p').each(function (idx, element) {
-        element.children.forEach(value => {
-          text += value.data;
-          text += '\n';
-        })
-      });
-      res.send(text)
-    })
+      if (err) {
+        res.json(result);
+      } else {
+        var $ = cheerio.load(sres.text);
+        $('.story-body__inner p').each(function (idx, element) {
+          element.children.forEach(value => {
+            text += value.data;
+            text += '\n';
+          });
+        });
+        if (text != "") {
+          result.text = text;
+          result.status = "ok";
+        }
+        res.json(result);
+      }
+    });
 });
 
-app.listen(3000, function () {
-  console.log('Example app listening on port 3000!');
+app.listen(port, function () {
+  console.log('Example app listening on port ' + port);
 });
